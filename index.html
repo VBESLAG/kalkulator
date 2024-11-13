@@ -94,21 +94,18 @@
             margin-top: 20px;
             text-align: left;
         }
-        .footer {
-            font-size: 10px;
-            color: #555;
-            margin-top: 20px;
+        .summary-separator {
+            margin-top: 10px;
+            border-bottom: 2px solid #333;
         }
         .control-buttons {
             display: flex;
             gap: 5px;
             justify-content: space-between;
-            position: absolute;
-            bottom: 15px;
-            width: calc(100% - 30px);
+            margin-top: 15px; /* Økt avstand fra linjen over */
         }
         .control-buttons button {
-            padding: 6px 12px;
+            padding: 6px 8px;
             font-size: 10px;
             border: none;
             border-radius: 5px;
@@ -128,8 +125,28 @@
         .print-button:hover {
             background-color: #1e8449;
         }
-
-        /* Utskriftstilpasninger */
+        .sms-button {
+            background-color: #f39c12;
+            color: white;
+        }
+        .sms-button:hover {
+            background-color: #e67e22;
+        }
+        /* Skjult miniknapp uten tekst */
+        .hidden-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 12px;
+            height: 12px;
+            background: #f0f0f0; /* Lys grå knapp */
+            border: 1px solid #ddd;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        .hidden-button:hover {
+            background: #e0e0e0;
+        }
         @media print {
             body {
                 display: block;
@@ -146,10 +163,7 @@
                 page-break-inside: avoid;
                 margin-bottom: 20px;
             }
-            .calculator:nth-of-type(2n) {
-                page-break-after: always;
-            }
-            .control-buttons, .footer, .add-button, .delete-button, button {
+            .control-buttons, .footer, .add-button, .delete-button, button, .hidden-button {
                 display: none;
             }
             .calculator-container .result {
@@ -172,23 +186,27 @@
     <div id="calculators"></div>
     <button class="add-button" onclick="addCalculator()">Legg til linje</button>
     
-    <!-- Samlet totalsumseksjon nederst -->
     <div class="summary">
         <p>Totalsum eks. mva: <span id="totalSumEksMva">0</span> kr</p>
         <p>MVA (25%): <span id="totalMva">0</span> kr</p>
         <p>Totalsum inkl. mva: <span id="totalSumInkMva">0</span> kr</p>
     </div>
+
+    <div class="summary-separator"></div> <!-- Linje under totalsumseksjonen -->
     
     <div class="control-buttons">
         <button class="print-button" onclick="skrivUt()">🖨️ Skriv ut</button>
+        <button class="sms-button" onclick="lagTilbudsTekst()">📋 Kopier tekst</button>
         <button class="reset-button" onclick="resetAll()">Nullstill</button>
     </div>
-    
-    <div class="footer">Av Vangen Harstad AS</div>
+
+    <button class="hidden-button" onclick="visInternTotal()" title="Vis intern total"></button> <!-- Diskret knapp uten tekst -->
+
 </div>
 
 <script>
     let calculatorCount = 0;
+    let internalTotalSumWithoutDiscount = 0; // Variabel for totalsum uten rabatt
 
     function addCalculator() {
         calculatorCount++;
@@ -215,16 +233,13 @@
                 <option value="1.67" data-text="Riskorn - 2 mm">Riskorn - 2 mm</option>
                 <option value="1.49" data-text="DørkALU - 4 mm">DørkALU - 4 mm</option>
             </select>
-            
             <input type="text" id="inputType${calculatorCount}" placeholder="Type">
-            
             <div class="row">
-                <input type="number" id="inputMM${calculatorCount}" placeholder="Utbrettet mål (mm)" min="0" step="1">
-                <input type="number" id="inputAntallMeter${calculatorCount}" placeholder="Antall meter" min="0.1" step="0.1">
+                <input type="number" id="inputMM${calculatorCount}" placeholder="UB. mm" min="0" step="1">
+                <input type="number" id="inputAntallMeter${calculatorCount}" placeholder="Antall lm" min="0.1" step="0.1">
                 <input type="number" id="inputAntall${calculatorCount}" placeholder="Antall" min="1" step="1">
                 <input type="number" id="inputRabatt${calculatorCount}" placeholder="Rabatt (%)" min="0" max="100">
             </div>
-            
             <button onclick="calculateLine(${calculatorCount})">Beregn Pris</button>
             <div class="result" id="result${calculatorCount}"></div>
             <button class="delete-button" onclick="deleteCalculator(${calculatorCount})">Slett linje</button>
@@ -235,7 +250,7 @@
 
     function calculateLine(id) {
         const mm = parseInt(document.getElementById(`inputMM${id}`).value);
-        let antallMeter = parseFloat(document.getElementById(`inputAntallMeter${id}`).value) || 1;
+        const antallMeter = parseFloat(document.getElementById(`inputAntallMeter${id}`).value) || 1;
         const rabattProsent = parseFloat(document.getElementById(`inputRabatt${id}`).value) || 0;
         const antall = parseInt(document.getElementById(`inputAntall${id}`).value) || 1;
         const selectedMaterial = document.getElementById(`materialType${id}`);
@@ -260,34 +275,32 @@
         }
 
         prisPerMeter *= sats;
-        const rabattBeløpPerMeter = (prisPerMeter * rabattProsent) / 100;
-        const meterprisInklRabatt = Math.ceil(prisPerMeter - rabattBeløpPerMeter);
         const bruktMeter = Math.max(antallMeter, 1.25);
-        const totalPrisEtterRabatt = Math.ceil(bruktMeter * meterprisInklRabatt) * antall;
-        const mva = Math.ceil(totalPrisEtterRabatt * 0.25);
-        const totalPrisInkMva = totalPrisEtterRabatt + mva;
+        const totalPrisUtenRabatt = bruktMeter * prisPerMeter * antall;
+        const rabattBeløp = (totalPrisUtenRabatt * rabattProsent) / 100;
+        const totalPrisEtterRabatt = Math.ceil(totalPrisUtenRabatt - rabattBeløp);
 
         let rabattText = '';
         if (rabattProsent > 0) {
-            const totalRabatt = Math.ceil(bruktMeter * rabattBeløpPerMeter) * antall;
-            rabattText = `<p><em>Rabatt:</em> ${rabattProsent}% (-${totalRabatt} kr)</p>`;
+            rabattText = `<p><em>Rabatt:</em> ${rabattProsent}% (-${Math.ceil(rabattBeløp)} kr)</p>`;
         }
 
         document.getElementById(`result${id}`).innerHTML = `
             <p><em>Type:</em> ${typeText}</p>
             <p><em>Materiale og tykkelse:</em> ${materialText}</p>
-            <p><em>Utbrettet mål:</em> ${mm} mm</p>
-            <p><em>Antall meter:</em> ${antallMeter.toFixed(2)} m</p>
+            <p><em>UB. mm:</em> ${mm} mm</p>
+            <p><em>Antall lm:</em> ${antallMeter.toFixed(2)} m</p>
             <p><em>Antall:</em> ${antall}</p>
             ${rabattText}
             <p class="total">Totalpris eks. mva: ${totalPrisEtterRabatt} kr</p>
         `;
 
-        updateTotal();
+        updateTotal(totalPrisUtenRabatt);
     }
 
-    function updateTotal() {
+    function updateTotal(totalPrisUtenRabatt) {
         let totalSumEksMva = 0;
+        
         for (let i = 1; i <= calculatorCount; i++) {
             const resultElement = document.getElementById(`result${i}`);
             if (resultElement) {
@@ -298,29 +311,65 @@
                 }
             }
         }
+
         const totalMva = Math.ceil(totalSumEksMva * 0.25);
         const totalSumInkMva = totalSumEksMva + totalMva;
+        
         document.getElementById("totalSumEksMva").innerText = totalSumEksMva;
         document.getElementById("totalMva").innerText = totalMva;
         document.getElementById("totalSumInkMva").innerText = totalSumInkMva;
+
+        // Oppdater variabelen for intern totalsum uten rabatt
+        internalTotalSumWithoutDiscount = totalPrisUtenRabatt;
     }
 
     function resetAll() {
         document.getElementById("calculators").innerHTML = '';
         calculatorCount = 0;
-        updateTotal();
+        internalTotalSumWithoutDiscount = 0;
+        updateTotal(0);
     }
 
     function deleteCalculator(id) {
         const calculatorDiv = document.getElementById(`calculator${id}`);
         if (calculatorDiv) {
             calculatorDiv.remove();
-            updateTotal();
+            updateTotal(0);
         }
     }
 
     function skrivUt() {
         window.print();
+    }
+
+    function lagTilbudsTekst() {
+        let tilbudsTekst = "Tilbud fra Vangen Harstad AS:\n";
+        
+        for (let i = 1; i <= calculatorCount; i++) {
+            const resultElement = document.getElementById(`result${i}`);
+            if (resultElement) {
+                const materialType = document.getElementById(`materialType${i}`).options[document.getElementById(`materialType${i}`).selectedIndex].getAttribute("data-text");
+                const typeText = document.getElementById(`inputType${i}`).value;
+                const mm = document.getElementById(`inputMM${i}`).value;
+                const antallMeter = document.getElementById(`inputAntallMeter${i}`).value;
+                const antall = document.getElementById(`inputAntall${i}`).value;
+                const totalLine = resultElement.querySelector('.total');
+                
+                if (totalLine) {
+                    const totalPris = totalLine.innerText.split(": ")[1];
+                    tilbudsTekst += `\nType: ${typeText}\nMateriale: ${materialType}\nUB. mm: ${mm} mm\nAntall lm: ${antallMeter} m\nAntall: ${antall}\nPris: ${totalPris}\n`;
+                }
+            }
+        }
+        
+        tilbudsTekst += `\nTotalsum eks. mva: ${document.getElementById("totalSumEksMva").innerText} kr\nMVA: ${document.getElementById("totalMva").innerText} kr\nTotalsum inkl. mva: ${document.getElementById("totalSumInkMva").innerText} kr`;
+        
+        alert(tilbudsTekst);
+        navigator.clipboard.writeText(tilbudsTekst).then(() => alert("Tilbudsteksten er kopiert til utklippstavlen."));
+    }
+
+    function visInternTotal() {
+        alert(`Intern totalsum ekskl. MVA og rabatt: ${internalTotalSumWithoutDiscount} kr`);
     }
 </script>
 
