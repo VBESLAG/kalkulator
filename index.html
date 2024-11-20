@@ -5,749 +5,391 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Produksjonsliste</title>
     <style>
-/* Generell styling for hele siden */
-/* Sørg for at body tillater scrolling */
-body {
-    height: 100%; /* Full høyde */
-    margin: 0;
-    padding: 0;
-    font-family: Arial, sans-serif;
-    overflow-y: auto; /* Aktiver vertikal scrolling */
-    background: linear-gradient(to right, #f8f9fa, #e9ecef); /* Bakgrunnsfarge */
-}
-
-/* Beholder for kalkulatoren */
-.calculator-container {
-    width: 420px; /* Behold fast bredde */
-    max-height: 80vh; /* Sett en maks høyde som ikke fyller hele skjermen */
-    overflow-y: auto; /* Aktiver scrolling inne i kalkulatoren */
-    background: #ffffff;
-    border-radius: 10px;
-    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
-    padding: 20px;
-    position: relative;
-}
-
-/* Wrapper rundt hele siden */
-.container-wrapper {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: flex-start; /* Plasser kalkulatoren øverst */
-    padding: 20px; /* Legg til luft rundt kalkulatoren */
-    overflow-y: auto; /* Aktiver scrolling for hele siden hvis nødvendig */
-    box-sizing: border-box;
-}
-
-/* Hovedoverskrifter */
-h2 {
-    font-size: 20px;
-    margin-bottom: 10px;
-    text-align: center;
-}
-
-.subtitle {
-    font-size: 12px;
-    font-style: italic;
-    color: #6c757d; /* Lys grå tekst */
-    margin-bottom: 20px;
-    text-align: center;
-}
-
-/* Kalkulator seksjoner */
-.calculator {
-    border-bottom: 2px solid #333; /* Tykkere og mørkere linje */
-    margin-bottom: 15px; /* Økt mellomrom mellom seksjonene */
-    padding-bottom: 10px; /* Gi litt luft nederst */
-}
-
-
-/* Input-felter */
-input[type="number"], input[type="text"], select {
-    width: 100%; /* Full bredde */
-    padding: 8px; /* Komfortabel padding */
-    font-size: 14px; /* Jevn tekststørrelse */
-    border: 1px solid #ced4da; /* Lys grå kant */
-    border-radius: 5px; /* Runde hjørner */
-    margin-bottom: 10px;
-}
-
-input[type="number"]:focus, input[type="text"]:focus, select:focus {
-    border-color: #80bdff; /* Blå kant ved fokus */
-    outline: none;
-}
-
-/* Rader for input */
-.row {
-    display: flex;
-    gap: 10px;
-    justify-content: space-between;
-    align-items: center; /* Sørg for at elementer er justert vertikalt */
-}
-
-input[type="number"], select, input[type="text"] {
-    width: 100%;
-    padding: 8px;
-    font-size: 14px;
-    border: 1px solid #ced4da;
-    border-radius: 5px;
-    box-sizing: border-box;
-}
-
-input[type="number"]:focus, select:focus, input[type="text"]:focus {
-    border-color: #80bdff;
-    outline: none;
-}
-
-.delete-button {
-    background-color: #e74c3c;
-    color: white;
-    border: none;
-    padding: 8px 10px;
-    font-size: 12px;
-    cursor: pointer;
-    border-radius: 5px;
-    white-space: nowrap; /* Hindrer linjeskift */
-}
-
-.delete-button:hover {
-    background-color: #c0392b;
-}
-
-.row label {
-    font-size: 12px;
-    margin-bottom: 4px;
-    display: block;
-}
-
-.row div {
-    flex: 1;
-    min-width: 100px; /* Gir et minimum for små skjermer */
-}
-.input-wrapper {
-    display: flex;
-    flex-direction: column;
-    gap: 5px; /* Luft mellom etikett og input-felt */
-    width: 30%; /* Tilpass bredden */
-}
-
-.input-wrapper label {
-    font-size: 12px;
-    color: #6c757d; /* Lys grå farge for etiketten */
-    margin-bottom: 2px; /* Luft mellom etikett og felt */
-}
-
-.input-wrapper input {
-    padding: 6px;
-    font-size: 14px;
-    border: 1px solid #ced4da;
-    border-radius: 5px;
-    width: 100%;
-}
-
-
-
-/* Knappene */
-button {
-    display: inline-block;
-    padding: 10px 15px;
-    font-size: 14px;
-    color: #fff;
-    background-color: #007bff; /* Blå standardfarge */
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    text-align: center;
-    transition: background-color 0.3s ease;
-}
-
-button:hover {
-    background-color: #0056b3; /* Mørkere blå ved hover */
-}
-
-/* Slett linje-knappen */
-.delete-button {
-    background-color: #e74c3c; /* Rød bakgrunn */
-    float: right; /* Plasser til høyre */
-    margin-top: -35px; /* Juster vertikalt for samme høyde */
-}
-
-.delete-button:hover {
-    background-color: #c0392b; /* Mørkere rød ved hover */
-}
-
-/* Ny vare-knappen */
-#addButton {
-    width: 100%; /* Full bredde */
-    padding: 10px;
-    background-color: #6c757d; /* Grå bakgrunn */
-    color: #fff;
-    border: none;
-    border-radius: 5px;
-    text-align: left;
-    cursor: pointer;
-    position: relative;
-}
-
-#addButton:hover {
-    background-color: #5a6268;
-}
-
-/* Dropdown-meny */
-#dropdown {
-    opacity: 0; /* Start usynlig */
-    visibility: hidden; /* Skjul elementet */
-    position: absolute; /* Dynamisk plassert under container */
-    background: white;
-    border: 1px solid #ced4da;
-    border-radius: 5px;
-    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
-    z-index: 1000;
-    width: 100%; /* Tilpass bredde til dropdown-container */
-    transition: opacity 0.3s ease, visibility 0.3s ease;
-}
-
-#dropdown.show {
-    opacity: 1; /* Gjør synlig */
-    visibility: visible; /* Fjern skjuling */
-}
-
-
-.dropdown-container {
-    position: relative; /* Gjør containeren referansepunktet for dropdown */
-}
-
-#dropdown button {
-    width: 100%;
-    text-align: left
-
-/* Resultater */
-.result {
-    font-size: 14px;
-    text-align: left;
-    margin-top: 5px;
-}
-
-/* Totalsummer */
-.summary {
-    font-weight: bold;
-    font-size: 16px;
-    margin-top: 20px;
-}
-
-.total {
-    font-size: 18px;
-    font-weight: bold;
-    color: #007bff; /* Blå farge for totalsum */
-    margin-top: 10px;
-}
-
-/* Kontrollknapper */
-.control-buttons {
-    display: flex;
-    gap: 10px;
-    justify-content: center;
-    margin-top: 15px;
-}
-
-.reset-button {
-    background-color: #28a745; /* Grønn knapp */
-}
-
-.reset-button:hover {
-    background-color: #218838;
-}
-
-.print-button {
-    background-color: #17a2b8; /* Blågrønn knapp */
-}
-
-.print-button:hover {
-    background-color: #117a8b;
-}
-
-.sms-button {
-    background-color: #ffc107; /* Gul knapp */
-    color: #000;
-}
-
-.sms-button:hover {
-    background-color: #e0a800;
-}
-.dropdown-container {
-    display: flex;
-    position: relative;
-    width: 100%;
-}
-
-.add-button {
-    width: calc(100% - 40px); /* Hovedknappen tar mest plass */
-    border-radius: 5px 0 0 5px; /* Runde hjørner til venstre */
-    background-color: #6c757d;
-    color: #fff;
-    border: none;
-    padding: 10px;
-    text-align: left;
-    cursor: pointer;
-}
-
-.add-button:hover {
-    background-color: #5a6268;
-}
-
-.dropdown-toggle {
-    width: 30px; /* Gjør knappen smalere */
-    height: 30px; /* Gjør den kvadratisk */
-    background-color: transparent; /* Fjern bakgrunnsfarge */
-    color: #6c757d; /* Bruk en dempet gråfarge for pilen */
-    border: none; /* Fjern kantlinje */
-    border-radius: 50%; /* Gjør knappen rund */
-    cursor: pointer; /* Klikkbart utseende */
-    display: flex; /* Sentrer pilen */
-    align-items: center;
-    justify-content: center;
-    font-size: 14px; /* Gjør pilen mindre */
-    transition: color 0.2s ease; /* Myk overgang for fargeendring */
-}
-
-.dropdown-toggle:hover {
-    color: #495057; /* Litt mørkere grå ved hover for tydelighet */
-}
-
-#dropdown {
-    display: none; /* Skjult som standard */
-    position: absolute;
-    background: white; /* Hvit bakgrunn */
-    border: 1px solid #ced4da; /* Lys grå kant */
-    border-radius: 5px; /* Runde hjørner */
-    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1); /* Myk skygge */
-    z-index: 1000; /* Sørg for at menyen alltid vises på toppen */
-    top: 40px; /* Plasser under knappene */
-    left: 0;
-    width: 100%; /* Tilpass bredde til containeren */
-}
-
-#dropdown button {
-    width: 100%; /* Sørg for at knappene fyller rullegardinen */
-    text-align: left; /* Juster teksten mot venstre */
-    padding: 10px; /* Luft rundt knappene */
-    background: none; /* Ingen bakgrunn */
-    border: none; /* Fjern kant */
-    font-size: 14px; /* Jevn tekststørrelse */
-    cursor: pointer; /* Klikkbart utseende */
-    color: #212529; /* Mørk tekstfarge */
-}
-
-#dropdown button:hover {
-    background-color: #f8f9fa; /* Lys grå ved hover */
-}
-body {
-    font-family: Arial, sans-serif;
-    font-size: 14px;
-    margin: 0;
-    padding: 0;
-    height: 100vh;
-    overflow-y: auto; /* Aktiver scrolling for hele siden */
-    background: linear-gradient(to right, #f8f9fa, #e9ecef); /* Bakgrunnsfarge */
-}
-
-
-/* Print-stil */
-@media print {
-    /* Optimaliser hele body for utskrift */
-    body {
-        margin: 0;
-        padding: 0;
-        font-size: 12px;
-        overflow: visible; /* Sørg for at alt innhold blir synlig ved utskrift */
-    }
-
-    .container-wrapper {
-        display: block; /* Sørg for riktig blokk-layout for utskrift */
-        height: auto; /* Tillat at innholdet utvides */
-        overflow: visible; /* Hindrer klipping av innhold */
-    }
-
-    .calculator-container {
-        width: 100%; /* Bruk hele bredden ved utskrift */
-        max-height: none; /* Fjern høydebegrensningen */
-        overflow: visible; /* Sørg for at innholdet ikke klippes */
-        padding: 0;
-        box-shadow: none;
-        border: none;
-    }
-
-    .calculator {
-        page-break-inside: avoid; /* Hindrer sideskifte midt i en kalkulatorlinje */
-        margin-bottom: 20px;
-        border-bottom: 2px solid black; /* Tydeligere skille mellom linjer */
-        padding-bottom: 10px;
-    }
-
-    /* Kontrollknapper og interaktive elementer skjules */
-    .control-buttons,
-    #addButton,
-    #dropdown,
-    .hidden-button {
-        display: none; /* Skjul knapper og rullegardin */
-    }
-
-    .dropdown-container {
-        display: none; /* Skjul dropdown */
-    }
-
-    /* Total-seksjonen */
-    .summary {
-        page-break-before: always; /* Start på ny side hvis nødvendig */
-        font-size: 14px; /* Gjør totalsum mer leselig */
-        margin-top: 20px;
-    }
-
-    /* Generelle justeringer for utskrift */
-    .result {
-        font-size: 12px;
-    }
-
-    .total {
-        font-size: 14px;
-        font-weight: bold;
-    }
-
-    @page {
-        size: A4; /* Standard A4-format */
-        margin: 1cm; /* Marg for utskrift */
-    }
-}
-
-/* Forbedre stilen på input-feltene med etiketter */
-.row div {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    width: 24%; /* Juster for fire like store kolonner */
-}
-
-.row label {
-    font-size: 12px;
-    color: #6c757d; /* Lys grå tekstfarge for etiketter */
-}
-
-input[type="number"] {
-    font-size: 14px;
-}
-
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        .calculator-container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 400px;
+            position: relative;
+        }
+        .subtitle {
+            font-size: 12px;
+            font-style: italic;
+            color: #666;
+            margin-top: -8px;
+            margin-bottom: 20px;
+        }
+        .calculator {
+            margin-bottom: 15px;
+            position: relative;
+            page-break-inside: avoid;
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+        }
+        input[type="number"], input[type="text"], select {
+            width: 100%;
+            padding: 5px;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        .row {
+            display: flex;
+            justify-content: space-between;
+            gap: 5px;
+        }
+        .row input[type="number"] {
+            width: 24%;
+        }
+        button {
+            padding: 6px 10px;
+            font-size: 12px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .delete-button {
+            font-size: 12px;
+            background-color: #e74c3c;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 5px;
+            cursor: pointer;
+            display: inline-block;
+            margin-top: 5px;
+            float: right;
+        }
+        .delete-button:hover {
+            background-color: #c0392b;
+        }
+        .result {
+            font-size: 14px;
+            color: #333;
+            text-align: left;
+        }
+        .total {
+            font-weight: bold;
+            font-size: 18px;
+            color: #000;
+            margin-top: 10px;
+        }
+        .summary {
+            font-weight: bold;
+            margin-top: 20px;
+            text-align: left;
+        }
+        .summary-separator {
+            margin-top: 10px;
+            border-bottom: 2px solid #333;
+        }
+        .control-buttons {
+            display: flex;
+            gap: 5px;
+            justify-content: space-between;
+            margin-top: 15px; /* Økt avstand fra linjen over */
+        }
+        .control-buttons button {
+            padding: 6px 8px;
+            font-size: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .reset-button {
+            background-color: #3498db;
+            color: white;
+        }
+        .reset-button:hover {
+            background-color: #2980b9;
+        }
+        .print-button {
+            background-color: #27ae60;
+            color: white;
+        }
+        .print-button:hover {
+            background-color: #1e8449;
+        }
+        .sms-button {
+            background-color: #f39c12;
+            color: white;
+        }
+        .sms-button:hover {
+            background-color: #e67e22;
+        }
+        /* Skjult miniknapp uten tekst */
+        .hidden-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 12px;
+            height: 12px;
+            background: #f0f0f0; /* Lys grå knapp */
+            border: 1px solid #ddd;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        .hidden-button:hover {
+            background: #e0e0e0;
+        }
+        @media print {
+            body {
+                display: block;
+                margin: 0;
+                width: 21cm;
+            }
+            .calculator-container {
+                width: 100%;
+                border: none;
+                box-shadow: none;
+                page-break-after: always;
+            }
+            .calculator {
+                page-break-inside: avoid;
+                margin-bottom: 20px;
+            }
+            .control-buttons, .footer, .add-button, .delete-button, button, .hidden-button {
+                display: none;
+            }
+            .calculator-container .result {
+                font-size: 12px;
+            }
+            .calculator-container {
+                padding: 10px;
+            }
+            .summary {
+                display: block;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="container-wrapper">
-        <div class="calculator-container">
-            <h2>Produksjonsliste</h2>
-            <p class="subtitle">En vbeslag.no-kalkulator for beregning av beslag</p>
-            <div id="calculators"></div>
-            <div class="dropdown-container">
-                <button id="addButton" class="add-button" onclick="addBeslagCalculator()">+ Nytt Beslag</button>
-                <button id="dropdownToggle" class="dropdown-toggle" onclick="toggleDropdown()">▼</button>
-                <div id="dropdown">
-                    <button onclick="addSpecificLine('Arbeidstid')">Arbeidstid</button>
-                    <button onclick="addSpecificLine('Åpen post')">Åpen post</button>
-                </div>
-            </div>
-            <div class="summary">
-                <p>Totalsum eks. mva: <span id="totalSumEksMva">0</span> kr</p>
-                <p>MVA (25%): <span id="totalMva">0</span> kr</p>
-                <p>Totalsum inkl. mva: <span id="totalSumInkMva">0</span> kr</p>
-            </div>
-            <div class="summary-separator"></div>
-            <div class="control-buttons">
-                <button class="print-button" onclick="skrivUt()">🖨️ Skriv ut</button>
-                <button class="sms-button" onclick="lagTilbudsTekst()">📋 Kopier tekst</button>
-                <button class="reset-button" onclick="resetAll()">Nullstill</button>
-            </div>
-        </div>
+
+<div class="calculator-container">
+    <h2>Produksjonsliste</h2>
+    <p class="subtitle">En vbeslag.no-kalkulator for beregning av beslag</p>
+    <div id="calculators"></div>
+    
+    
+    <div class="summary">
+        <p>Totalsum eks. mva: <span id="totalSumEksMva">0</span> kr</p>
+        <p>MVA (25%): <span id="totalMva">0</span> kr</p>
+        <p>Totalsum inkl. mva: <span id="totalSumInkMva">0</span> kr</p>
+    </div>
+
+    <div class="summary-separator"></div> <!-- Linje under totalsumseksjonen -->
+    
+    <div class="control-buttons">
+        <button class="add-button" onclick="addCalculator()">➕ Legg til linje</button>
+        <button class="print-button" onclick="skrivUt()">🖨️ Skriv ut</button>
+        <button class="sms-button" onclick="lagTilbudsTekst()">📋 Kopier tekst</button>
+        <button class="reset-button" onclick="resetAll()">Nullstill</button>
+    </div>
+
+    
+
+    
+
+    <button class="hidden-button" onclick="visInternTotal()" title="Vis intern total"></button> <!-- Diskret knapp uten tekst -->
+
 </div>
+
 <script>
     let calculatorCount = 0;
     let internalTotalSumWithoutDiscount = 0; // Variabel for totalsum uten rabatt
 
-    function toggleDropdown() {
-    const dropdown = document.getElementById('dropdown');
-    dropdown.classList.toggle('show'); // Legg til eller fjern "show"-klassen
-}
+    function addCalculator() {
+        calculatorCount++;
+        const calculatorDiv = document.createElement("div");
+        calculatorDiv.className = "calculator";
+        calculatorDiv.id = `calculator${calculatorCount}`;
+        
+        calculatorDiv.innerHTML = `
+            <select id="materialType${calculatorCount}">
+                <option value="0.5" data-text="Lakkert stål - 0,7 mm">Lakkert stål - 0,7 mm</option>
+                <option value="0.5" data-text="Plastisol - 0,7 mm">Plastisol - 0,7 mm</option>
+                <option value="0.5" data-text="Galv - 0,7 mm">Galv - 0,7 mm</option>
+                <option value="0.6" data-text="Galv - 0,9 mm">Galv - 0,9 mm</option>
+                <option value="0.35" data-text="Galv - 1,2 mm">Galv - 1,2 mm</option>
+                <option value="0.67" data-text="Rustfritt - 0,7 mm">Rustfritt - 0,7 mm</option>
+                <option value="0.75" data-text="Rustfritt - 1 mm">Rustfritt - 1 mm</option>
+                <option value="1.2" data-text="Rustfritt - 1,2 mm">Rustfritt - 1,2 mm</option>
+                <option value="0.65" data-text="Blank alu - 0,7 mm">Blank alu - 0,7 mm</option>
+                <option value="0.8" data-text="Blank alu - 1 mm">Blank alu - 1 mm</option>
+                <option value="0.96" data-text="Blank alu - 2 mm">Blank alu - 2 mm</option>
+                <option value="2" data-text="Blank alu - 4 mm">Blank alu - 4 mm</option>
+                <option value="0.97" data-text="Naturelok - 1 mm">Naturelok - 1 mm</option>
+                <option value="1.1" data-text="Hvit alu - 2 mm">Hvit alu - 2 mm</option>
+                <option value="1.67" data-text="Riskorn - 2 mm">Riskorn - 2 mm</option>
+                <option value="1.49" data-text="DørkALU - 4 mm">DørkALU - 4 mm</option>
+            </select>
+            <input type="text" id="inputType${calculatorCount}" placeholder="Type">
+            <div class="row">
+                <input type="number" id="inputMM${calculatorCount}" placeholder="UB. mm" min="0" step="1">
+                <input type="number" id="inputAntallMeter${calculatorCount}" placeholder="Antall lm" min="0.1" step="0.1">
+                <input type="number" id="inputAntall${calculatorCount}" placeholder="Antall" min="1" step="1">
+                <input type="number" id="inputRabatt${calculatorCount}" placeholder="Rabatt (%)" min="0" max="100">
+            </div>
+            <button onclick="calculateLine(${calculatorCount})">Beregn Pris</button>
+            <div class="result" id="result${calculatorCount}"></div>
+            <button class="delete-button" onclick="deleteCalculator(${calculatorCount})">Slett linje</button>
+        `;
 
-    function addSpecificLine(type) {
-    if (type === 'Arbeidstid') {
-        addWorkTimeCalculator(); // Kaller funksjonen for arbeidstid
-    } else if (type === 'Åpen post') {
-        addOpenPostCalculator(); // Kaller funksjonen for åpen post
+        document.getElementById("calculators").appendChild(calculatorDiv);
+        // Legg til event-lyttinger for automatisk beregning
+document.getElementById(`inputMM${calculatorCount}`).addEventListener('input', () => calculateLine(calculatorCount));
+document.getElementById(`inputAntallMeter${calculatorCount}`).addEventListener('input', () => calculateLine(calculatorCount));
+document.getElementById(`inputAntall${calculatorCount}`).addEventListener('input', () => calculateLine(calculatorCount));
+document.getElementById(`materialType${calculatorCount}`).addEventListener('change', () => calculateLine(calculatorCount));
+
+        
     }
-}
-function addWorkTimeCalculator() {
-    calculatorCount++;
-    const calculatorDiv = document.createElement("div");
-    calculatorDiv.className = "calculator";
-    calculatorDiv.id = `calculator${calculatorCount}`;
-
-    calculatorDiv.innerHTML = `
-    <select id="materialType${calculatorCount}">
-        <option value="0.5" data-text="Lakkert stål - 0,7 mm">Lakkert stål - 0,7 mm</option>
-        <option value="0.5" data-text="Plastisol - 0,7 mm">Plastisol - 0,7 mm</option>
-        <option value="0.5" data-text="Galv - 0,7 mm">Galv - 0,7 mm</option>
-        <option value="0.6" data-text="Galv - 0,9 mm">Galv - 0,9 mm</option>
-        <option value="0.35" data-text="Galv - 1,2 mm">Galv - 1,2 mm</option>
-        <option value="0.67" data-text="Rustfritt - 0,7 mm">Rustfritt - 0,7 mm</option>
-        <option value="0.75" data-text="Rustfritt - 1 mm">Rustfritt - 1 mm</option>
-        <option value="1.2" data-text="Rustfritt - 1,2 mm">Rustfritt - 1,2 mm</option>
-        <option value="0.65" data-text="Blank alu - 0,7 mm">Blank alu - 0,7 mm</option>
-        <option value="0.8" data-text="Blank alu - 1 mm">Blank alu - 1 mm</option>
-        <option value="0.96" data-text="Blank alu - 2 mm">Blank alu - 2 mm</option>
-        <option value="2" data-text="Blank alu - 4 mm">Blank alu - 4 mm</option>
-        <option value="0.97" data-text="Naturelok - 1 mm">Naturelok - 1 mm</option>
-        <option value="1.1" data-text="Hvit alu - 2 mm">Hvit alu - 2 mm</option>
-        <option value="1.67" data-text="Riskorn - 2 mm">Riskorn - 2 mm</option>
-        <option value="1.49" data-text="DørkALU - 4 mm">DørkALU - 4 mm</option>
-    </select>
-    <input type="text" id="inputType${calculatorCount}" placeholder="Type">
-    <div class="row">
-        <div class="input-wrapper">
-            <label for="inputMM${calculatorCount}">UB i mm:</label>
-            <input type="number" id="inputMM${calculatorCount}" placeholder="0" min="0" step="1">
-        </div>
-        <div class="input-wrapper">
-            <label for="inputAntallMeter${calculatorCount}">Antall lm:</label>
-            <input type="number" id="inputAntallMeter${calculatorCount}" value="1" min="0.1" step="0.1">
-        </div>
-        <div class="input-wrapper">
-            <label for="inputAntall${calculatorCount}">Antall:</label>
-            <input type="number" id="inputAntall${calculatorCount}" value="1" min="1" step="1">
-        </div>
-    </div>
-    <button class="toggle-rabatt-button" onclick="toggleRabattField(${calculatorCount})">Rabatt</button>
-    <div class="rabatt-container" id="rabattContainer${calculatorCount}" style="display: none;">
-        <label for="inputRabatt${calculatorCount}">Rabatt (%):</label>
-        <input type="number" id="inputRabatt${calculatorCount}" value="0" min="0" max="100" onchange="calculateLine(${calculatorCount})">
-    </div>
-    <button onclick="calculateLine(${calculatorCount})">Beregn Pris</button>
-    <div class="result" id="result${calculatorCount}"></div>
-    <button class="delete-button" onclick="deleteCalculator(${calculatorCount})">Slett linje</button>
-`;
-
-
-    document.getElementById("calculators").appendChild(calculatorDiv);
-}
-
-function calculateOpenPost(id) {
-    const description = document.getElementById(`customDescription${id}`).value || 'Åpen post';
-    const unitPrice = parseFloat(document.getElementById(`unitPrice${id}`).value) || 0;
-    const quantity = parseInt(document.getElementById(`quantity${id}`).value) || 1;
-
-    const totalPrice = Math.ceil(unitPrice * quantity);
-
-    document.getElementById(`result${id}`).innerHTML = `
-        <p><em>Beskrivelse:</em> ${description}</p>
-        <p><em>Pris per enhet:</em> ${unitPrice} kr</p>
-        <p><em>Antall:</em> ${quantity}</p>
-        <p class="total">Totalpris: ${totalPrice} kr</p>
-    `;
-    updateTotal();
-}
-
-
-function calculateWorkTime(id) {
-    const hours = parseInt(document.getElementById(`hours${id}`).value) || 0;
-    const minutes = parseInt(document.getElementById(`minutes${id}`).value) || 0;
-    const description = document.getElementById(`description${id}`).value || 'Timesalg';
-
-    const totalHours = hours + minutes / 60;
-    const price = Math.ceil(totalHours * 800); // Timesats på 800 kr
-
-    document.getElementById(`result${id}`).innerHTML = `
-        <p><em>Beskrivelse:</em> ${description}</p>
-        <p><em>Totalt:</em> ${hours} timer og ${minutes} minutter</p>
-        <p class="total">Totalpris: ${price} kr</p>
-    `;
-    updateTotal();
-}
-
-function addBeslagCalculator() {
-    calculatorCount++;
-    const calculatorDiv = document.createElement("div");
-    calculatorDiv.className = "calculator";
-    calculatorDiv.id = `calculator${calculatorCount}`;
-
-    calculatorDiv.innerHTML = `
-    <select id="materialType${calculatorCount}">
-        <option value="0.5" data-text="Lakkert stål - 0,7 mm">Lakkert stål - 0,7 mm</option>
-        <option value="0.5" data-text="Plastisol - 0,7 mm">Plastisol - 0,7 mm</option>
-        <option value="0.5" data-text="Galv - 0,7 mm">Galv - 0,7 mm</option>
-        <option value="0.6" data-text="Galv - 0,9 mm">Galv - 0,9 mm</option>
-        <option value="0.35" data-text="Galv - 1,2 mm">Galv - 1,2 mm</option>
-        <option value="0.67" data-text="Rustfritt - 0,7 mm">Rustfritt - 0,7 mm</option>
-        <option value="0.75" data-text="Rustfritt - 1 mm">Rustfritt - 1 mm</option>
-        <option value="1.2" data-text="Rustfritt - 1,2 mm">Rustfritt - 1,2 mm</option>
-        <option value="0.65" data-text="Blank alu - 0,7 mm">Blank alu - 0,7 mm</option>
-        <option value="0.8" data-text="Blank alu - 1 mm">Blank alu - 1 mm</option>
-        <option value="0.96" data-text="Blank alu - 2 mm">Blank alu - 2 mm</option>
-        <option value="2" data-text="Blank alu - 4 mm">Blank alu - 4 mm</option>
-        <option value="0.97" data-text="Naturelok - 1 mm">Naturelok - 1 mm</option>
-        <option value="1.1" data-text="Hvit alu - 2 mm">Hvit alu - 2 mm</option>
-        <option value="1.67" data-text="Riskorn - 2 mm">Riskorn - 2 mm</option>
-        <option value="1.49" data-text="DørkALU - 4 mm">DørkALU - 4 mm</option>
-    </select>
-    <input type="text" id="inputType${calculatorCount}" placeholder="Type">
-    <div class="row">
-        <div class="input-wrapper">
-            <label for="inputMM${calculatorCount}">UB. mm:</label>
-            <input type="number" id="inputMM${calculatorCount}" placeholder="0" min="0" step="1">
-        </div>
-        <div class="input-wrapper">
-            <label for="inputAntallMeter${calculatorCount}">Antall lm:</label>
-            <input type="number" id="inputAntallMeter${calculatorCount}" value="1" min="0.1" step="0.1">
-        </div>
-        <div class="input-wrapper">
-            <label for="inputAntall${calculatorCount}">Antall stk:</label>
-            <input type="number" id="inputAntall${calculatorCount}" value="1" min="1" step="1">
-        </div>
-    </div>
-    <button class="toggle-rabatt-button" onclick="toggleRabattField(${calculatorCount})">Rabatt</button>
-    <div class="rabatt-container" id="rabattContainer${calculatorCount}" style="display: none;">
-        <label for="inputRabatt${calculatorCount}">Rabatt (%):</label>
-        <input type="number" id="inputRabatt${calculatorCount}" value="0" min="0" max="100" onchange="calculateLine(${calculatorCount})">
-    </div>
-    <button onclick="calculateLine(${calculatorCount})">Beregn Pris</button>
-    <div class="result" id="result${calculatorCount}"></div>
-    <button class="delete-button" onclick="deleteCalculator(${calculatorCount})">Slett linje</button>
-`;
-
-
-    document.getElementById("calculators").appendChild(calculatorDiv);
-
-    // Legg til event listeners for automatisk oppdatering
-    document.getElementById(`inputMM${calculatorCount}`).addEventListener("input", () => calculateLine(calculatorCount));
-    document.getElementById(`inputAntallMeter${calculatorCount}`).addEventListener("input", () => calculateLine(calculatorCount));
-    document.getElementById(`inputAntall${calculatorCount}`).addEventListener("input", () => calculateLine(calculatorCount));
-    document.getElementById(`materialType${calculatorCount}`).addEventListener("change", () => calculateLine(calculatorCount));
-}
-
-// Funksjon for å vise/skjule rabattfelt
-function toggleRabattField(id) {
-    const rabattContainer = document.getElementById(`rabattContainer${id}`);
-    rabattContainer.style.display = rabattContainer.style.display === "none" ? "block" : "none";
-}
-
 
     function calculateLine(id) {
-    // Hent verdier fra feltene
-    const mm = parseInt(document.getElementById(`inputMM${id}`).value);
-    const antallMeter = parseFloat(document.getElementById(`inputAntallMeter${id}`).value);
-    const rabattProsent = parseFloat(document.getElementById(`inputRabatt${id}`).value) || 0;
-    const antall = parseInt(document.getElementById(`inputAntall${id}`).value);
-    const selectedMaterial = document.getElementById(`materialType${id}`);
-    const sats = parseFloat(selectedMaterial.value);
-    const materialText = selectedMaterial.options[selectedMaterial.selectedIndex].getAttribute("data-text");
-    const typeText = document.getElementById(`inputType${id}`).value;
+        const mm = parseInt(document.getElementById(`inputMM${id}`).value);
+        const antallMeter = parseFloat(document.getElementById(`inputAntallMeter${id}`).value) || 1;
+        const rabattProsent = parseFloat(document.getElementById(`inputRabatt${id}`).value) || 0;
+        const antall = parseInt(document.getElementById(`inputAntall${id}`).value) || 1;
+        const selectedMaterial = document.getElementById(`materialType${id}`);
+        const sats = parseFloat(selectedMaterial.value);
+        const materialText = selectedMaterial.options[selectedMaterial.selectedIndex].getAttribute("data-text");
+        const typeText = document.getElementById(`inputType${id}`).value;
 
-    // Sjekk om nødvendige verdier er fylt ut
-    let errorMessage = "";
+        let prisPerMeter = 0;
+        if (mm <= 125) { prisPerMeter = 125; }
+        else if (mm <= 138) { prisPerMeter = 138; }
+        else if (mm <= 156) { prisPerMeter = 156; }
+        else if (mm <= 178) { prisPerMeter = 178; }
+        else if (mm <= 208) { prisPerMeter = 208; }
+        else if (mm <= 250) { prisPerMeter = 250; }
+        else if (mm <= 312) { prisPerMeter = 312; }
+        else if (mm <= 416) { prisPerMeter = 416; }
+        else if (mm <= 625) { prisPerMeter = 625; }
+        else if (mm <= 1250) { prisPerMeter = 1250; }
+        else {
+            document.getElementById(`result${id}`).innerHTML = "Ugyldig mål, prøv et mål mellom 0 og 1250 mm";
+            return;
+        }
+        function visRabattInput(id) {
+    const rabattDiv = document.getElementById(`rabattDiv${id}`);
+    const rabattKnapp = document.getElementById(`rabattKnapp${id}`);
+    if (rabattDiv.style.display === 'none') {
+        rabattDiv.style.display = 'block';
+        rabattKnapp.innerText = "Skjul rabatt";
+    } else {
+        rabattDiv.style.display = 'none';
+        rabattKnapp.innerText = "Legg til rabatt";
+        document.getElementById(`inputRabatt${id}`).value = ''; // Tøm rabattfeltet når det skjules
+        calculateLine(id); // Oppdater totalen uten rabatt
+    }
+}
 
-    if (!mm || mm <= 0) errorMessage += "❌ Vennligst fyll inn en gyldig UB i mm.<br>";
-    if (!antallMeter || antallMeter <= 0) errorMessage += "❌ Vennligst fyll inn et gyldig antall lm.<br>";
-    if (!antall || antall <= 0) errorMessage += "❌ Vennligst fyll inn et gyldig antall.<br>";
+        prisPerMeter *= sats;
+        const bruktMeter = Math.max(antallMeter, 1.25);
+        const totalPrisUtenRabatt = bruktMeter * prisPerMeter * antall;
+        const rabattBeløp = (totalPrisUtenRabatt * rabattProsent) / 100;
+        const totalPrisEtterRabatt = Math.ceil(totalPrisUtenRabatt - rabattBeløp);
 
-    // Hvis det er feil, vis feilmelding i resultatfeltet og avslutt
-    if (errorMessage) {
-        document.getElementById(`result${id}`).innerHTML = `<div style="color: red;">${errorMessage}</div>`;
-        return;
+        let rabattText = '';
+        if (rabattProsent > 0) {
+            rabattText = `<p><em>Rabatt:</em> ${rabattProsent}% (-${Math.ceil(rabattBeløp)} kr)</p>`;
+        }
+
+        document.getElementById(`result${id}`).innerHTML = `
+            <p><em>Type:</em> ${typeText}</p>
+            <p><em>Materiale og tykkelse:</em> ${materialText}</p>
+            <p><em>UB. mm:</em> ${mm} mm</p>
+            <p><em>Antall lm:</em> ${antallMeter.toFixed(2)} m</p>
+            <p><em>Antall:</em> ${antall}</p>
+            ${rabattText}
+            <p class="total">Totalpris eks. mva: ${totalPrisEtterRabatt} kr</p>
+        `;
+
+        updateTotal(totalPrisUtenRabatt);
     }
 
-    // Beregn pris per meter basert på mm-verdier
-    let prisPerMeter = 0;
-    if (mm <= 125) { prisPerMeter = 125; }
-    else if (mm <= 138) { prisPerMeter = 138; }
-    else if (mm <= 156) { prisPerMeter = 156; }
-    else if (mm <= 178) { prisPerMeter = 178; }
-    else if (mm <= 208) { prisPerMeter = 208; }
-    else if (mm <= 250) { prisPerMeter = 250; }
-    else if (mm <= 312) { prisPerMeter = 312; }
-    else if (mm <= 416) { prisPerMeter = 416; }
-    else if (mm <= 625) { prisPerMeter = 625; }
-    else if (mm <= 1250) { prisPerMeter = 1250; }
-    else {
-        document.getElementById(`result${id}`).innerHTML = "<div style='color: red;'>❌ Ugyldig mål. Prøv et mål mellom 0 og 1250 mm.</div>";
-        return;
+    function updateTotal(totalPrisUtenRabatt) {
+    let totalSumEksMva = 0;
+
+    // Legg sammen alle linjesummer
+    for (let i = 1; i <= calculatorCount; i++) {
+        const resultElement = document.getElementById(`result${i}`);
+        if (resultElement) {
+            const totalLine = resultElement.querySelector('.total');
+            if (totalLine) {
+                const totalPrisEksMva = parseInt(totalLine.innerText.split(": ")[1]);
+                totalSumEksMva += totalPrisEksMva;
+            }
+        }
     }
 
-    // Beregn totalpris
-    prisPerMeter *= sats;
-    const bruktMeter = Math.max(antallMeter, 1.25); // Bruk minst 1.25 m
-    const totalPrisUtenRabatt = bruktMeter * prisPerMeter * antall;
-    const rabattBeløp = (totalPrisUtenRabatt * rabattProsent) / 100;
-    const totalPrisEtterRabatt = Math.ceil(totalPrisUtenRabatt - rabattBeløp);
+    // Sjekk om totalen er under 1000 kr
+    const oppstartspris = 100; // Minsteprisen
+    if (totalSumEksMva < 1000) {
+        totalSumEksMva += oppstartspris; // Legg til oppstartsprisen
 
-    // Generer resultattekst
-    let rabattText = '';
-    if (rabattProsent > 0) {
-        rabattText = `<p><em>Rabatt:</em> ${rabattProsent}% (-${Math.ceil(rabattBeløp)} kr)</p>`;
+        // Legg til melding hvis ikke allerede lagt til
+        if (!document.getElementById("minsteprisMessage")) {
+            const message = document.createElement("p");
+            message.id = "minsteprisMessage";
+            message.style.fontSize = "12px";
+            message.style.fontStyle = "italic";
+            message.style.color = "#666";
+            message.innerText = "Småordretillegg for kjøp under 1.000 kr = 100 kr";
+            document.querySelector(".summary").prepend(message);
+        }
+    } else {
+        // Fjern meldingen hvis summen er over 1000 kr
+        const message = document.getElementById("minsteprisMessage");
+        if (message) {
+            message.remove();
+        }
     }
 
-    document.getElementById(`result${id}`).innerHTML = `
-        <p><em>Type:</em> ${typeText}</p>
-        <p><em>Materiale og tykkelse:</em> ${materialText}</p>
-        <p><em>UB. mm:</em> ${mm} mm</p>
-        <p><em>Antall lm:</em> ${antallMeter.toFixed(2)} m</p>
-        <p><em>Antall:</em> ${antall}</p>
-        ${rabattText}
-        <p class="total">Totalpris eks. mva: ${totalPrisEtterRabatt} kr</p>
-    `;
+    // Beregn MVA og totalsum inkludert MVA
+    const totalMva = Math.ceil(totalSumEksMva * 0.25);
+    const totalSumInkMva = totalSumEksMva + totalMva;
 
-    updateTotal(); // Oppdater totalsummen
+    // Oppdater totalsumvisningene
+    document.getElementById("totalSumEksMva").innerText = totalSumEksMva;
+    document.getElementById("totalMva").innerText = totalMva;
+    document.getElementById("totalSumInkMva").innerText = totalSumInkMva;
+
+    // Oppdater variabelen for intern totalsum uten rabatt
+    internalTotalSumWithoutDiscount = totalPrisUtenRabatt;
 }
 
 
-    function updateTotal() {
-        let totalSumEksMva = 0;
-
-        for (let i = 1; i <= calculatorCount; i++) {
-            const resultElement = document.getElementById(`result${i}`);
-            if (resultElement) {
-                const totalLine = resultElement.querySelector('.total');
-                if (totalLine) {
-                    const totalPrisEksMva = parseInt(totalLine.innerText.split(": ")[1]);
-                    totalSumEksMva += totalPrisEksMva;
-                }
-            }
-        }
-
-        const totalMva = Math.ceil(totalSumEksMva * 0.25);
-        const totalSumInkMva = totalSumEksMva + totalMva;
-
-        document.getElementById("totalSumEksMva").innerText = totalSumEksMva;
-        document.getElementById("totalMva").innerText = totalMva;
-        document.getElementById("totalSumInkMva").innerText = totalSumInkMva;
-    }
 
     function resetAll() {
         document.getElementById("calculators").innerHTML = '';
         calculatorCount = 0;
-        updateTotal();
+        internalTotalSumWithoutDiscount = 0;
+        updateTotal(0);
     }
 
     function deleteCalculator(id) {
         const calculatorDiv = document.getElementById(`calculator${id}`);
         if (calculatorDiv) {
             calculatorDiv.remove();
-            updateTotal();
+            updateTotal(0);
         }
     }
-    function autoCalculate(id) {
-    if (document.getElementById(`materialType${id}`)) {
-        calculateLine(id);
-    } else if (document.getElementById(`hours${id}`)) {
-        calculateWorkTime(id);
-    } else if (document.getElementById(`unitPrice${id}`)) {
-        calculateOpenPost(id);
-    }
-}
 
     function skrivUt() {
         window.print();
@@ -755,7 +397,7 @@ function toggleRabattField(id) {
 
     function lagTilbudsTekst() {
         let tilbudsTekst = "Produksjonsliste:\n";
-
+        
         for (let i = 1; i <= calculatorCount; i++) {
             const resultElement = document.getElementById(`result${i}`);
             if (resultElement) {
@@ -765,18 +407,22 @@ function toggleRabattField(id) {
                 const antallMeter = document.getElementById(`inputAntallMeter${i}`).value;
                 const antall = document.getElementById(`inputAntall${i}`).value;
                 const totalLine = resultElement.querySelector('.total');
-
+                
                 if (totalLine) {
                     const totalPris = totalLine.innerText.split(": ")[1];
                     tilbudsTekst += `\nType: ${typeText}\nMateriale: ${materialType}\nUB. mm: ${mm} mm\nAntall lm: ${antallMeter} m\nAntall: ${antall}\nPris: ${totalPris}\n`;
                 }
             }
         }
-
+        
         tilbudsTekst += `\nTotalsum eks. mva: ${document.getElementById("totalSumEksMva").innerText} kr\nMVA: ${document.getElementById("totalMva").innerText} kr\nTotalsum inkl. mva: ${document.getElementById("totalSumInkMva").innerText} kr`;
-
+        
         alert(tilbudsTekst);
         navigator.clipboard.writeText(tilbudsTekst).then(() => alert("Tilbudsteksten er kopiert til utklippstavlen."));
+    }
+
+    function visInternTotal() {
+        alert(`Intern totalsum ekskl. MVA og rabatt: ${internalTotalSumWithoutDiscount} kr`);
     }
 </script>
 
