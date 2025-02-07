@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Reklameprodukter</title>
+
+  <!-- XLSX for Excel-eksport -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <!-- html2pdf for PDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
+
+  <style>
+    /* Grunnleggende oppsett */
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+      box-sizing: border-box;
+    }
+    *, *::before, *::after { box-sizing: inherit; }
+    body {
+      font-family: sans-serif;
+      overflow-y: auto;
+      position: relative;
+    }
+    .page-wrapper {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 15px;
+    }
+    /* Enkel animert bakgrunn */
+    body::before,
+    body::after {
+      content: "";
+      position: absolute;
+      width: 700px;
+      height: 700px;
+      border-radius: 50%;
+      z-index: -1;
+      animation: moveGradient 15s infinite alternate;
+      filter: blur(90px);
+      will-change: background;
+    }
+    body::before {
+      top: -250px;
+      left: -200px;
+      background: radial-gradient(circle, rgba(173,216,230,0.5), rgba(240,248,255,0));
+    }
+    body::after {
+      bottom: -250px;
+      right: -200px;
+      background: radial-gradient(circle, rgba(250,128,114,0.4), rgba(255,182,193,0));
+    }
+    @keyframes moveGradient {
+      0% { background: radial-gradient(circle, rgba(173,216,230,0.5), rgba(240,248,255,0)); }
+      50% { background: radial-gradient(circle, rgba(250,128,114,0.4), rgba(255,182,193,0)); }
+      100% { background: radial-gradient(circle, rgba(144,238,144,0.5), rgba(255,255,240,0)); }
+    }
+    .hidden { display: none !important; }
+
+    /* Header – Infosymbolet er nå fjernet */
+    .page-header {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 80px;
+      display: flex;
+      align-items: center;
+      padding: 0 30px;
+      background: #fff;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      z-index: 1000;
+    }
+    .page-header .left-text { font-size: 14px; font-weight: 600; margin-right: auto; }
+    .page-header .right { font-size: 14px; margin-left: auto; margin-right: 15px; }
+
+    /* Kalkulatorområde */
+    .calculator-container {
+      margin: 100px auto 150px;
+      width: 100%;
+      max-width: 900px;
+      padding: 20px;
+      position: relative;
+      /* Kalkulatoren vises med en fade-in effekt */
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fadeInEffect 1.2s forwards;
+      display: block;
+    }
+    @keyframes fadeInEffect { to { opacity: 1; transform: translateY(0); } }
+    .content h2 { margin-top: 0; }
+    .subtitle { font-size: 12px; font-style: italic; color: #666; margin-top: -8px; margin-bottom: 20px; }
+    .calculator, .custom-calculator {
+      margin-bottom: 15px;
+      position: relative;
+      border-bottom: 2px solid #333;
+      padding-bottom: 10px;
+    }
+    .basic-fields, .advanced-fields { margin-bottom: 10px; }
+    .row { display: flex; justify-content: space-between; gap: 5px; }
+    .row input { width: 50%; }
+    input[type="number"], input[type="text"], select {
+      width: 100%;
+      padding: 5px;
+      font-size: 14px;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    input::placeholder { color: #aaa; font-style: italic; }
+    input:focus { border-color: #4CAF50; box-shadow: 0 0 5px rgba(76,175,80,0.4); outline: none; }
+
+    /* Knapper */
+    button {
+      padding: 10px 15px;
+      font-size: 14px;
+      background: #4CAF50;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+    button:hover { background: #45a049; transform: scale(1.05); box-shadow: 0 8px 20px rgba(0,0,0,0.2); }
+    .delete-button {
+      font-size: 10px;
+      background: #f4e7e7a4;
+      color: rgb(1,0,0);
+      padding: 4px;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 14px;
+    }
+    .delete-button:hover { background: #ffffff43; }
+    .advanced-toggle { font-size: 12px; background: #bbb; margin-top: 0; color: #222; }
+    .checkbox-label { font-size: 14px; color: #333; }
+
+    /* Resultat */
+    .result { font-size: 12px; color: #333; line-height: 1.2; margin-bottom: 5px; }
+    .result p { margin: 0 0 4px 0; }
+    .total { font-weight: bold; font-size: 18px; color: #000; margin-top: 10px; }
+
+    /* Invoice Summary */
+    .invoice-summary {
+      margin-top: 20px;
+      text-align: right;
+      font-size: 18px;
+      border-top: 2px solid #333;
+      padding-top: 10px;
+    }
+    .invoice-summary p { margin: 5px 0; }
+
+    /* Bunnmeny – Fjernet utskriftsknapp for kvittering */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: #fff;
+      border-top: 1px solid #ddd;
+      padding: 15px 20px;
+      box-shadow: 0 -2px 8px rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
+      gap: 10px;
+      z-index: 1000;
+    }
+    .export-container { position: relative; }
+    .format-options {
+      position: absolute;
+      bottom: 100%;
+      left: 0;
+      z-index: 1100;
+      background: #fff;
+      border: 1px solid #ccc;
+      padding: 10px;
+      display: none;
+      flex-direction: column;
+      gap: 5px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    .format-options.show { display: flex !important; }
+
+    /* Footer */
+    .page-footer {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      height: 15mm;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 5mm 10mm;
+      border-top: 1px solid #ddd;
+      font-size: 10px;
+      background: #fff;
+    }
+    .page-footer .footer-column p { margin: 2px 0; }
+
+    /* PDF – Full A4-bredde med ordrebekreftelsesutseende */
+    #pdfContainer {
+      width: 190mm;
+      max-width: 100%;
+      margin: 0 auto;
+      padding: 20mm;
+      font-family: Arial, sans-serif;
+      color: #333;
+      position: relative;
+      min-height: 277mm;
+      background: #fff;  /* Sørger for hvit bakgrunn */
+    }
+    #pdfContainer h1 { text-align: left; margin-bottom: 10mm; }
+    #pdfContainer .invoice-header {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      border-bottom: 1px solid #ccc;
+      padding-bottom: 10px;
+      margin-bottom: 10mm;
+    }
+    #pdfContainer table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: auto;
+      word-wrap: break-word;
+    }
+    #pdfContainer table th,
+    #pdfContainer table td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: left;
+      font-size: 12px;
+      white-space: normal;
+    }
+    #pdfContainer table th { background: #f2f2f2; }
+    #pdfContainer .totals { margin-top: 10mm; text-align: right; font-size: 14px; }
+    #pdfFooter {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      font-size: 10px;
+      text-align: center;
+      border-top: 1px solid #ccc;
+      padding-top: 5mm;
+    }
+
+    /* Scroll-to-top */
+    .scroll-to-top {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #4CAF50;
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      padding: 10px 15px;
+      font-size: 16px;
+      box-shadow: 0 5px 10px rgba(0,0,0,0.2);
+      cursor: pointer;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s, visibility 0.3s;
+      z-index: 1000;
+    }
+    .scroll-to-top.show { opacity: 1; visibility: visible; }
+
+    /* Print-stiler */
+    @media print {
+      button, .row, select, input, .advanced-toggle, .format-options {
+        display: none !important;
+      }
+      .page-header, .bottom-nav, .page-footer { display: none !important; }
+      html, body { margin: 0; padding: 0; }
+      .calculator-container { padding: 10mm; background: #fff; }
+      .calculator, .custom-calculator { margin-bottom: 10mm; page-break-inside: avoid; }
+      @page { size: A4; margin: 15mm; }
+      .total { font-size: 16px; font-weight: bold; }
+    }
+    
+    /* Responsivt */
+    @media (max-width: 768px) {
+      .calculator-container {
+        width: 95%;
+        padding: 15px;
+        margin-top: 100px;
+        margin-bottom: 150px;
+      }
+      .page-header, .bottom-nav, .page-footer { width: 100%; left: 0; right: 0; }
+      .row { flex-wrap: wrap; }
+      .row input { width: 100%; margin-bottom: 10px; }
+      button, input[type="number"], input[type="text"], select { font-size: 16px; padding: 10px; }
+      .result { font-size: 14px; line-height: 1.5; }
+    }
+  </style>
+</head>
+<body>
+  <!-- WRAPPER -->
+  <div class="page-wrapper">
+    <!-- HEADER -->
+    <div class="page-header">
+      <div class="left-text">Reklameprodukter</div>
+      <p class="right">Dato: <span id="orderDate"></span></p>
+      <!-- Infosymbolet er fjernet -->
+    </div>
+
+    <!-- KALKULATOR-OMRÅDE -->
+    <div class="calculator-container">
+      <div class="content">
+        <h2>Reklameprodukter Kalkulator</h2>
+        <p class="subtitle">
+          demo av Steffen Vangen
+        </p>
+        <div id="calculators"></div>
+      </div>
+      <div class="invoice-summary" id="invoiceSummary">
+        <p id="invoiceTotalExMva">Sum eks. mva: 0 kr</p>
+        <p id="invoiceMva">MVA (25%): 0 kr</p>
+        <p id="invoiceTotalIncMva">Total inkl. mva: 0 kr</p>
+      </div>
+    </div>
+
+    <!-- BUNNMENY -->
+    <div class="bottom-nav">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <button class="update-button" onclick="animateUpdate()">Oppdater Alle</button>
+        <button class="update-button" onclick="addCustomProduct()">Egendefinert vare</button>
+        <div class="export-container" onmouseleave="closeFormatOptions()">
+          <button class="update-button" onmouseenter="openFormatOptions()">Utskrift / Eksport</button>
+          <div id="formatOptions" class="format-options">
+            <button onclick="exportToExcelWithDetails()">Eksporter til Excel</button>
+            <button onclick="generatePDF()">Lag PDF</button>
+            <button onclick="lagTilbudsTekst()">Kopier tekst</button>
+            <!-- Funksjonen "Skriv ut kvittering" er fjernet -->
+          </div>
+        </div>
+        <!-- TO SJEKKBOKSER: Oppstart/klisjekostnad og Ekspedisjonsavgift -->
+        <label class="checkbox-label">
+          <input type="checkbox" id="oppstartCheckbox" onchange="toggleOppstartCheckbox(this)" checked>
+          Oppstart/klisjekostnad (300 kr)
+        </label>
+        <label class="checkbox-label">
+          <input type="checkbox" id="ekspedisjonCheckbox" onchange="toggleEkspedisjonCheckbox(this)" checked>
+          Ekspedisjonsavgift (80 kr)
+        </label>
+      </div>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="page-footer">
+      <div class="footer-column">
+        <p>Reklameprodukter</p>
+        <p>Adresse: Eksempelveien 1</p>
+        <p>0000 Sted</p>
+      </div>
+      <div class="footer-column">
+        <p>Web: <a href="https://reklameprodukter.no" target="_blank">reklameprodukter.no</a></p>
+        <p>Email: post@reklameprodukter.no</p>
+      </div>
+      <div class="footer-column">
+        <p>Tlf: 12 34 56 78</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 1) DEBOUNCE-FUNKSJON
+    function debounce(fn, delay) {
+      let timer = null;
+      return function(...args) {
+        if (timer) clearTimeout(timer);
+        timer = setTimeout(() => fn.apply(this, args), delay);
+      }
+    }
+
+    // 2) UTSKRIFTSMENY
+    function openFormatOptions(){ document.getElementById("formatOptions").classList.add("show"); }
+    function closeFormatOptions(){ document.getElementById("formatOptions").classList.remove("show"); }
+
+    // 3) VARIABLER
+    let calculatorCount = 0, customCount = 0;
+    // Erstatt smallOrderEnabled med to separate variabler:
+    let oppstartEnabled = true;
+    let ekspedisjonEnabled = true;
+    let multiLengths = {};
+    let currentCalcId = null;
+
+    // 4) LEGG TIL NY KALKULATOR
+    function addCalculator(){
+      calculatorCount++;
+      const id = calculatorCount;
+      const calcDiv = document.createElement("div");
+      calcDiv.className = "calculator";
+      calcDiv.id = `calculator${id}`;
+
+      const dropdown = `
+      <select id="productType${id}">
+        <optgroup label="Vinyl & Grafikk">
+          <option value="200" data-text="Vinyl Banner Standard – 1.5m x 3m">Vinyl Banner Standard – 1.5m x 3m</option>
+          <option value="300" data-text="Vinyl Banner Premium – 1.5m x 3m">Vinyl Banner Premium – 1.5m x 3m</option>
+        </optgroup>
+        <optgroup label="Foliering & Dekal">
+          <option value="250" data-text="Bilfolie – Delvis Wrap">Bilfolie – Delvis Wrap</option>
+          <option value="400" data-text="Bilfolie – Full Wrap">Bilfolie – Full Wrap</option>
+          <option value="150" data-text="Vindusdekor – Frostet">Vindusdekor – Frostet</option>
+        </optgroup>
+        <optgroup label="Banner & Skilt">
+          <option value="180" data-text="Laminert Banner – Standard">Laminert Banner – Standard</option>
+          <option value="220" data-text="Laminert Banner – Ekstra Holdbar">Laminert Banner – Ekstra Holdbar</option>
+          <option value="350" data-text="Utendørs Skilt">Utendørs Skilt</option>
+        </optgroup>
+        <optgroup label="Annet">
+          <option value="100" data-text="Custom Plakatprint">Custom Plakatprint</option>
+          <option value="80" data-text="Etiketter & Klistremerker">Etiketter & Klistremerker</option>
+        </optgroup>
+      </select>
+      `;
+
+      calcDiv.innerHTML = dropdown + `
+        <div class="basic-fields">
+          <input type="text" id="inputDescription${id}" placeholder="Beskriv produktet (f.eks. Banner til event)" oninput="debouncedCalculateLine(${id})" />
+          <div class="row">
+            <div class="input-group">
+              <label for="inputWidth${id}">Bredde (m)</label>
+              <input type="number" id="inputWidth${id}" placeholder="f.eks. 1.5" step="0.01" oninput="debouncedCalculateLine(${id})" />
+            </div>
+            <div class="input-group">
+              <label for="inputHeight${id}">Høyde (m)</label>
+              <input type="number" id="inputHeight${id}" placeholder="f.eks. 3" step="0.01" oninput="debouncedCalculateLine(${id})" />
+            </div>
+          </div>
+          <div class="row">
+            <div class="input-group">
+              <label for="inputQuantity${id}">Antall</label>
+              <input type="number" id="inputQuantity${id}" placeholder="f.eks. 2" oninput="debouncedCalculateLine(${id})" />
+            </div>
+            <div class="input-group">
+              <label for="inputDiscount${id}">Rabatt (%)</label>
+              <input type="number" id="inputDiscount${id}" placeholder="f.eks. 10" oninput="debouncedCalculateLine(${id})" />
+            </div>
+          </div>
+          <button class="advanced-toggle" onclick="toggleAdvanced(${id})">Flere innstillinger</button>
+          <div class="advanced-section hidden" id="advancedSection${id}" style="border:1px solid #ccc; border-radius:5px; padding:8px; margin-top:10px;">
+            <div class="row">
+              <div class="input-group">
+                <label for="inputMontering${id}">Monteringstid (min)</label>
+                <input type="number" id="inputMontering${id}" placeholder="min" min="0" step="1" oninput="debouncedCalculateLine(${id})" />
+              </div>
+              <div class="input-group" style="display:flex; align-items:center;">
+                <input type="checkbox" id="addLamination${id}" onchange="calculateLine(${id})" style="margin-right:5px;" />
+                <label for="addLamination${id}">Ekstra laminering (50 kr/m² × 1.15)</label>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="result" id="result${id}"></div>
+        <div class="control-buttons">
+          <button class="add-line-button" onclick="closeAllAdvancedAndAddCalculator()">➕ Legg til vare</button>
+          <button class="delete-button" onclick="confirmDeleteCalc(${id})">Slett vare</button>
+        </div>
+      `;
+      document.getElementById("calculators").appendChild(calcDiv);
+      removeAddButtonsFromAllExceptLast();
+    }
+
+    function toggleAdvanced(id){ 
+      document.getElementById(`advancedSection${id}`).classList.toggle("hidden");
+    }
+    function removeAddButtonsFromAllExceptLast(){
+      const allCalc = document.querySelectorAll(".calculator, .custom-calculator");
+      allCalc.forEach((calc, index) => {
+        const addBtn = calc.querySelector(".add-line-button");
+        if(addBtn){
+          addBtn.style.display = (index === allCalc.length - 1) ? "inline-block" : "none";
+        }
+      });
+    }
+    function confirmDeleteCalc(id){
+      const calcDiv = document.getElementById(`calculator${id}`);
+      if(!calcDiv) return;
+      if(!isCalculatorEmpty(calcDiv)){
+        if(!confirm("Er du sikker på at du vil slette denne varen?")) return;
+      }
+      deleteCalculator(id);
+    }
+    function isCalculatorEmpty(calcDiv){
+      const inputs = calcDiv.querySelectorAll("input");
+      for(let inp of inputs){
+        if(inp.type === "text" && inp.value.trim() !== "") return false;
+        if(inp.type === "number" && parseFloat(inp.value) > 0) return false;
+        if(inp.type === "checkbox" && inp.checked) return false;
+      }
+      return true;
+    }
+    function deleteCalculator(id){
+      const calcDiv = document.getElementById(`calculator${id}`);
+      if(!calcDiv) return;
+      const allCalc = document.querySelectorAll(".calculator");
+      if(allCalc.length > 1){
+        calcDiv.remove();
+        updateTotal();
+      } else {
+        alert("Du kan ikke slette den første kalkulatoren.");
+      }
+      removeAddButtonsFromAllExceptLast();
+    }
+
+    // Debounced calculate line
+    const debouncedCalculateLine = debounce(function(id){ calculateLine(id); }, 300);
+    function calculateLine(id){
+      const width = parseFloat(document.getElementById(`inputWidth${id}`).value) || 0;
+      const height = parseFloat(document.getElementById(`inputHeight${id}`).value) || 0;
+      const quantity = parseInt(document.getElementById(`inputQuantity${id}`).value) || 1;
+      const discountPercent = parseFloat(document.getElementById(`inputDiscount${id}`).value) || 0;
+      const description = document.getElementById(`inputDescription${id}`).value || "";
+      
+      const area = width * height;
+      if(area <= 0){
+        document.getElementById(`result${id}`).innerHTML = "<p style='color:red;'>Angi gyldige dimensjoner.</p>";
+        return;
+      }
+      
+      const productSelect = document.getElementById(`productType${id}`);
+      const priceFactor = parseFloat(productSelect.value);
+      const productText = productSelect.options[productSelect.selectedIndex].getAttribute("data-text") || "";
+      // Øker basisprisen med 15 %
+      const pricePerSqM = priceFactor * 3 * 1.15;
+      const baseCost = area * pricePerSqM * quantity;
+      
+      let laminationCost = 0;
+      const laminationCheckbox = document.getElementById(`addLamination${id}`);
+      if(laminationCheckbox && laminationCheckbox.checked){
+        laminationCost = area * 50 * 1.15 * quantity;
+      }
+      
+      const montering = parseInt(document.getElementById(`inputMontering${id}`).value) || 0;
+      const monteringCost = (montering / 60) * 900 * 1.15 * quantity;
+      
+      let totalBeforeDiscount = baseCost + laminationCost + monteringCost;
+      
+      const discountAmount = totalBeforeDiscount * (discountPercent/100);
+      const totalAfterDiscount = Math.ceil(totalBeforeDiscount - discountAmount);
+      const totalWithVAT = Math.ceil(totalAfterDiscount * 1.25);
+      
+      let resultHTML = `<p><em>Produkt:</em> ${description}</p>`;
+      resultHTML += `<p><em>Kategori:</em> ${productText}</p>`;
+      resultHTML += `<p><em>Dimensjoner:</em> ${width} m × ${height} m = ${area.toFixed(2)} m²</p>`;
+      resultHTML += `<p><em>Antall:</em> ${quantity}</p>`;
+      resultHTML += `<p><em>Basiskostnad:</em> ${baseCost.toFixed(2)} kr</p>`;
+      if(laminationCost > 0){
+        resultHTML += `<p><em>Ekstra laminering:</em> ${laminationCost.toFixed(2)} kr</p>`;
+      }
+      if(monteringCost > 0){
+        resultHTML += `<p><em>Montering:</em> ${monteringCost.toFixed(2)} kr</p>`;
+      }
+      if(discountPercent > 0){
+        resultHTML += `<p><em>Rabatt:</em> ${discountPercent}% (Sparer ca. ${Math.round(discountAmount)} kr)</p>`;
+      }
+      resultHTML += `<p class="total"><em>Sum eks. mva:</em> ${totalAfterDiscount} kr</p>`;
+      resultHTML += `<p><em>Sum inkl. mva:</em> ${totalWithVAT} kr</p>`;
+      
+      document.getElementById(`result${id}`).innerHTML = resultHTML;
+      
+      const calcDiv = document.getElementById(`calculator${id}`);
+      calcDiv.dataset.noDiscount = Math.ceil(totalBeforeDiscount);
+      calcDiv.dataset.withDiscount = totalAfterDiscount;
+      
+      updateTotal();
+    }
+    function updateTotal(){
+      const allCalc = document.querySelectorAll(".calculator, .custom-calculator");
+      let sumNo = 0, sumWith = 0;
+      allCalc.forEach(calc => {
+        let noDisc = parseFloat(calc.dataset.noDiscount) || 0;
+        let withDisc = parseFloat(calc.dataset.withDiscount) || 0;
+        sumNo += noDisc; sumWith += withDisc;
+      });
+      // Legger til de to faste gebyrene – kun dersom de er aktivert via sjekkboksene
+      let fixedFees = 0;
+      if(oppstartEnabled) fixedFees += 300;
+      if(ekspedisjonEnabled) fixedFees += 80;
+      sumNo += fixedFees;
+      sumWith += fixedFees;
+      
+      const mva = Math.ceil(sumWith * 0.25);
+      const totalInk = sumWith + mva;
+      
+      document.getElementById("invoiceTotalExMva").innerText = `Sum eks. mva: ${sumWith} kr`;
+      document.getElementById("invoiceMva").innerText = `MVA (25%): ${mva} kr`;
+      document.getElementById("invoiceTotalIncMva").innerText = `Total inkl. mva: ${totalInk} kr`;
+    }
+    // Erstatt toggleSmallOrderCheckbox med to funksjoner:
+    function toggleOppstartCheckbox(chk) {
+      oppstartEnabled = chk.checked;
+      updateTotal();
+    }
+    function toggleEkspedisjonCheckbox(chk) {
+      ekspedisjonEnabled = chk.checked;
+      updateTotal();
+    }
+    function animateUpdate(){
+      updateAllCalculators();
+      document.querySelector(".calculator-container").classList.add("flash");
+      setTimeout(() => { document.querySelector(".calculator-container").classList.remove("flash"); }, 1000);
+    }
+    function updateAllCalculators(){
+      for(let i = 1; i <= calculatorCount; i++){
+        const calc = document.getElementById(`calculator${i}`);
+        if(calc) calculateLine(i);
+      }
+      for(let c = 1; c <= customCount; c++){
+        const cust = document.getElementById(`customCalc${c}`);
+        if(cust) calculateCustomLine(c);
+      }
+    }
+
+    // 5) EGENDEFINERT VARE
+    function addCustomProduct(){
+      customCount++;
+      const id = customCount;
+      const custDiv = document.createElement("div");
+      custDiv.className = "custom-calculator";
+      custDiv.id = `customCalc${id}`;
+      custDiv.innerHTML = `
+        <div class="basic-fields">
+          <div class="input-group">
+            <label for="customName${id}">Varenavn</label>
+            <input type="text" id="customName${id}" placeholder="F.eks. Reklameartikkel"
+                   oninput="debouncedCalculateCustomLine(${id})" />
+          </div>
+          <div class="row">
+            <div class="input-group">
+              <label for="customQuantity${id}">Antall</label>
+              <input type="number" id="customQuantity${id}" placeholder="f.eks. 1"
+                     oninput="debouncedCalculateCustomLine(${id})" />
+            </div>
+            <div class="input-group">
+              <label for="customPrice${id}">Pris pr stk</label>
+              <input type="number" id="customPrice${id}" placeholder="f.eks. 50"
+                     oninput="debouncedCalculateCustomLine(${id})" />
+            </div>
+          </div>
+          <div class="input-group">
+            <label for="customDiscount${id}">Rabatt (%)</label>
+            <input type="number" id="customDiscount${id}" placeholder="f.eks. 10"
+                   oninput="debouncedCalculateCustomLine(${id})" />
+          </div>
+        </div>
+        <div class="result" id="customResult${id}"></div>
+        <div class="control-buttons">
+          <button class="add-line-button" onclick="closeAllAdvancedAndAddCalculator()">➕ Legg til vare</button>
+          <button class="delete-button" onclick="confirmDeleteCustom(${id})">Slett vare</button>
+        </div>
+      `;
+      document.getElementById("calculators").appendChild(custDiv);
+      removeAddButtonsFromAllExceptLast();
+    }
+    function calculateCustomLine(id){
+      const name = document.getElementById(`customName${id}`).value || "Annet produkt";
+      const quantity = parseFloat(document.getElementById(`customQuantity${id}`).value) || 1;
+      const price = parseFloat(document.getElementById(`customPrice${id}`).value) || 0;
+      const discountPercent = parseFloat(document.getElementById(`customDiscount${id}`).value) || 0;
+      // Øker prisen per stk med 15 %
+      const adjustedPrice = price * 1.15;
+      const totalNo = quantity * adjustedPrice;
+      const discountAmount = totalNo * (discountPercent/100);
+      const totalWith = Math.ceil(totalNo - discountAmount);
+      const ink = Math.ceil(totalWith * 1.25);
+      
+      let rabattLine = "";
+      if(discountPercent > 0){
+        rabattLine = `<p><em>Rabatt:</em> ${discountPercent}% (Sparer ca. ${Math.round(discountAmount)} kr)</p>`;
+      }
+      document.getElementById(`customResult${id}`).innerHTML = `
+        <p><em>Vare:</em> ${name}</p>
+        <p><em>Antall:</em> ${quantity}</p>
+        <p><em>Pris pr. stk:</em> ${adjustedPrice.toFixed(2)} kr</p>
+        ${rabattLine}
+        <p class="total"><em>Sum eks. mva:</em> ${totalWith} kr</p>
+        <p><em>Sum inkl. mva:</em> ${ink} kr</p>
+      `;
+      const custDiv = document.getElementById(`customCalc${id}`);
+      custDiv.dataset.noDiscount = Math.ceil(totalNo);
+      custDiv.dataset.withDiscount = totalWith;
+      updateTotal();
+    }
+    const debouncedCalculateCustomLine = debounce(function(id){ calculateCustomLine(id); }, 300);
+    function confirmDeleteCustom(id){
+      const custDiv = document.getElementById(`customCalc${id}`);
+      if(custDiv && !isCalculatorEmpty(custDiv)){
+        if(!confirm("Er du sikker på at du vil slette denne egendefinerte varen?")) return;
+      }
+      deleteCustomProduct(id);
+    }
+    function deleteCustomProduct(id){
+      const custDiv = document.getElementById(`customCalc${id}`);
+      if(custDiv){ custDiv.remove(); updateTotal(); }
+      removeAddButtonsFromAllExceptLast();
+    }
+    function closeAllAdvancedAndAddCalculator(){
+      const advSections = document.querySelectorAll(".advanced-section");
+      advSections.forEach(sec => sec.classList.add("hidden"));
+      addCalculator();
+    }
+
+    // 6) UTSKRIFT / EKSPORT / TEKSTKOPIERING
+    function exportToExcelWithDetails(){
+      const now = new Date();
+      const formattedDate = now.toLocaleDateString("no-NO",{year:"numeric", month:"2-digit", day:"2-digit"});
+      const header = [
+        ["Dato:", formattedDate, "", "", "", "", "REKLAMEPRODUKTER"],
+        ["Kunde:", "Ikke oppgitt", "", "", "", "", "Reklameprodukter"],
+        ["Prosjektnummer:", "Ikke oppgitt", "", "", "", "", "Eksempelveien 1"],
+        [""]
+      ];
+      const headers = ["Produktbeskrivelse","Kategori","Bredde (m)","Høyde (m)","Antall","Rabatt (%)","Sum eks. mva"];
+      const data = [];
+      for(let i=1; i<=calculatorCount; i++){
+        const calc = document.getElementById(`calculator${i}`);
+        if(!calc) continue;
+        const productSel = calc.querySelector(`#productType${i}`);
+        const kategori = productSel.options[productSel.selectedIndex].getAttribute("data-text") || "";
+        const beskrivelse = calc.querySelector(`#inputDescription${i}`).value || "";
+        const bredde = calc.querySelector(`#inputWidth${i}`).value || "";
+        const hoyde = calc.querySelector(`#inputHeight${i}`).value || "";
+        const antall = calc.querySelector(`#inputQuantity${i}`).value || "";
+        const rabatt = calc.querySelector(`#inputDiscount${i}`).value || "0";
+        const res = calc.querySelector(`#result${i}`);
+        const totEl = res.querySelector(".total");
+        const tot = totEl ? totEl.innerText.split(": ")[1] : "0 kr";
+        data.push([beskrivelse, kategori, bredde, hoyde, antall, rabatt+"%", tot]);
+      }
+      for(let c=1; c<=customCount; c++){
+        const cust = document.getElementById(`customCalc${c}`);
+        if(!cust) continue;
+        const name = cust.querySelector(`#customName${c}`).value || "Annet produkt";
+        const count = cust.querySelector(`#customQuantity${c}`).value || "1";
+        const price = cust.querySelector(`#customPrice${c}`).value || "0";
+        const rabatt = cust.querySelector(`#customDiscount${c}`).value || "0";
+        const res = cust.querySelector(`#customResult${c}`);
+        const totEl = res.querySelector(".total");
+        const tot = totEl ? totEl.innerText.split(": ")[1] : "0 kr";
+        data.push([name, "(Custom)", "", price+" kr/stk", count, rabatt+"%", tot]);
+      }
+      const sumEks = document.getElementById("invoiceTotalExMva").innerText.replace(/\D+/g,"");
+      const mva = document.getElementById("invoiceMva").innerText.replace(/\D+/g,"");
+      const ink = document.getElementById("invoiceTotalIncMva").innerText.replace(/\D+/g,"");
+      data.push(["","","","","","","---"]);
+      data.push(["","","","","","Sum eks. mva:", sumEks]);
+      data.push(["","","","","","MVA (25%):", mva]);
+      data.push(["","","","","","Totalsum inkl. mva:", ink]);
+      const wsData = [...header, [], headers, ...data, [], ["Takk for bestillingen!"]];
+      const ws = XLSX.utils.aoa_to_sheet(wsData);
+      ws["!cols"] = [{wch:20},{wch:25},{wch:10},{wch:10},{wch:10},{wch:12},{wch:18}];
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Reklameprodukter");
+      XLSX.writeFile(wb, `Reklameprodukter_${formattedDate}.xlsx`);
+    }
+
+    function generatePDF(){
+      // Oppdatert PDF for ordrebekreftelse
+      const sumEks = document.getElementById("invoiceTotalExMva").innerText.replace(/\D+/g,"");
+      const mva = document.getElementById("invoiceMva").innerText.replace(/\D+/g,"");
+      const ink = document.getElementById("invoiceTotalIncMva").innerText.replace(/\D+/g,"");
+      const dateText = document.getElementById("orderDate").innerText;
+      let rowsHTML = "";
+      const calcs = document.querySelectorAll(".calculator");
+      calcs.forEach((calc, idx) => {
+        const i = idx + 1;
+        const beskrivelse = calc.querySelector(`#inputDescription${i}`)?.value || "";
+        const kategori = calc.querySelector(`#productType${i}`).options[calc.querySelector(`#productType${i}`).selectedIndex].getAttribute("data-text") || "";
+        const bredde = calc.querySelector(`#inputWidth${i}`)?.value || "";
+        const hoyde = calc.querySelector(`#inputHeight${i}`)?.value || "";
+        const antall = calc.querySelector(`#inputQuantity${i}`)?.value || "";
+        const rabatt = calc.querySelector(`#inputDiscount${i}`)?.value || "0";
+        const montering = calc.querySelector(`#inputMontering${i}`)?.value || "0";
+        const res = calc.querySelector(`#result${i}`);
+        const totEl = res.querySelector(".total");
+        const tot = totEl ? totEl.innerText.split(": ")[1] : "0 kr";
+        let detailText = "";
+        if(montering && parseInt(montering) > 0) detailText += `Montering: ${montering} min; `;
+        if(rabatt && parseInt(rabatt) > 0) detailText += `Rabatt: ${rabatt}%; `;
+        rowsHTML += `
+          <tr>
+            <td>${beskrivelse}</td>
+            <td>${kategori}</td>
+            <td>${bredde}</td>
+            <td>${hoyde}</td>
+            <td>${antall}</td>
+            <td>${detailText}</td>
+            <td>${tot}</td>
+          </tr>
+        `;
+      });
+      const custs = document.querySelectorAll(".custom-calculator");
+      custs.forEach((cust, idx) => {
+        const i = idx + 1;
+        const name = cust.querySelector(`#customName${i}`)?.value || "Annet produkt";
+        const count = cust.querySelector(`#customQuantity${i}`)?.value || "";
+        const price = cust.querySelector(`#customPrice${i}`)?.value || "";
+        const rabatt = cust.querySelector(`#customDiscount${i}`)?.value || "0";
+        const res = cust.querySelector(`#customResult${i}`);
+        const totEl = res.querySelector(".total");
+        const tot = totEl ? totEl.innerText.split(": ")[1] : "0 kr";
+        let detailText = "";
+        if(rabatt && parseInt(rabatt) > 0) detailText += `Rabatt: ${rabatt}%; `;
+        rowsHTML += `
+          <tr>
+            <td>${name}</td>
+            <td>(Custom)</td>
+            <td></td>
+            <td></td>
+            <td>${count}</td>
+            <td>${detailText}</td>
+            <td>${tot}</td>
+          </tr>
+        `;
+      });
+      
+      const pdfHtml = `
+        <div id="pdfContainer">
+          <div class="invoice-header">
+            <div>
+              <h1>Reklameprodukter</h1>
+              <p>Eksempelveien 1</p>
+              <p>0000 Sted</p>
+              <p>Tlf: 12 34 56 78</p>
+              <p>Email: post@reklameprodukter.no</p>
+            </div>
+            <div>
+              <p>Dato: ${dateText}</p>
+            </div>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Beskrivelse</th>
+                <th>Kategori</th>
+                <th>Bredde (m)</th>
+                <th>Høyde (m)</th>
+                <th>Antall</th>
+                <th>Detaljer</th>
+                <th>Sum eks. mva</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rowsHTML}
+            </tbody>
+          </table>
+          <div class="totals">
+            <p>Sum eks. mva: ${sumEks} kr</p>
+            <p>MVA (25%): ${mva} kr</p>
+            <p><strong>Total inkl. mva: ${ink} kr</strong></p>
+          </div>
+          <div id="pdfFooter">
+            <p>Ordrebekreftelse generert av Reklameprodukter</p>
+          </div>
+        </div>
+      `;
+      
+      // I stedet for display:none, plasser elementet utenfor synlig område slik at html2canvas kan fange det opp
+      const tempDiv = document.createElement("div");
+      tempDiv.style.position = "absolute";
+      tempDiv.style.left = "-9999px";
+      tempDiv.innerHTML = pdfHtml;
+      document.body.appendChild(tempDiv);
+      
+      const opt = {
+        margin: 10,
+        filename: `Ordrebekreftelse_${(new Date()).toLocaleDateString("no-NO")}.pdf`,
+        image: { type:'jpeg', quality:0.98 },
+        html2canvas: { scale:2 },
+        jsPDF: { unit:'mm', format:'a4', orientation:'portrait' }
+      };
+      html2pdf().set(opt).from(tempDiv).save().then(() => {
+        document.body.removeChild(tempDiv);
+      });
+    }
+
+    function lagTilbudsTekst(){
+      let tekst = "Reklameprodukter Kalkulator:\n";
+      for(let i=1; i<=calculatorCount; i++){
+        const calc = document.getElementById(`calculator${i}`);
+        if(!calc) continue;
+        const beskrivelse = calc.querySelector(`#inputDescription${i}`).value || "Ikke oppgitt";
+        const kategori = calc.querySelector(`#productType${i}`).options[calc.querySelector(`#productType${i}`).selectedIndex].getAttribute("data-text") || "";
+        const bredde = calc.querySelector(`#inputWidth${i}`).value || "0";
+        const hoyde = calc.querySelector(`#inputHeight${i}`).value || "0";
+        const antall = calc.querySelector(`#inputQuantity${i}`).value || "0";
+        const rabatt = calc.querySelector(`#inputDiscount${i}`).value || "0";
+        const res = calc.querySelector(`#result${i}`);
+        const totEl = res.querySelector(".total");
+        const tot = totEl ? totEl.innerText.split(": ")[1] : "0 kr";
+        tekst += `\n➡️ Produkt #${i}:\n`;
+        tekst += `   - Beskrivelse: ${beskrivelse}\n`;
+        tekst += `   - Kategori: ${kategori}\n`;
+        tekst += `   - Dimensjoner: ${bredde} m × ${hoyde} m\n`;
+        tekst += `   - Antall: ${antall}\n`;
+        if(rabatt !== "0") tekst += `   - Rabatt: ${rabatt}%\n`;
+        tekst += `   - Pris (eks. mva): ${tot}\n`;
+      }
+      for(let c=1; c<=customCount; c++){
+        const cust = document.getElementById(`customCalc${c}`);
+        if(!cust) continue;
+        const name = cust.querySelector(`#customName${c}`).value || "Annet produkt";
+        const count = cust.querySelector(`#customQuantity${c}`).value || "1";
+        const price = cust.querySelector(`#customPrice${c}`).value || "0";
+        const rabatt = cust.querySelector(`#customDiscount${c}`).value || "0";
+        const res = cust.querySelector(`#customResult${c}`);
+        const totEl = res.querySelector(".total");
+        const tot = totEl ? totEl.innerText.split(": ")[1] : "0 kr";
+        tekst += `\n➡️ Egendefinert vare #${c}:\n`;
+        tekst += `   - Navn: ${name}\n`;
+        tekst += `   - Antall: ${count}\n`;
+        tekst += `   - Pris/stk: ${price} kr\n`;
+        if(rabatt !== "0") tekst += `   - Rabatt: ${rabatt}%\n`;
+        tekst += `   - Pris (eks. mva): ${tot}\n`;
+      }
+      const sumEks = document.getElementById("invoiceTotalExMva").innerText.replace(/\D+/g,"");
+      const mva = document.getElementById("invoiceMva").innerText.replace(/\D+/g,"");
+      const ink = document.getElementById("invoiceTotalIncMva").innerText.replace(/\D+/g,"");
+      tekst += `\n-------------------------------------------\n`;
+      tekst += `Totalsum eks. mva: ${sumEks} kr\n`;
+      tekst += `MVA (25%): ${mva} kr\n`;
+      tekst += `Totalsum inkl. mva: ${ink} kr\n`;
+      
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(tekst)
+          .then(() => { alert("Tilbudsteksten er kopiert til utklippstavlen."); })
+          .catch(err => { console.error("Feil:", err); alert("Feil: Kunne ikke kopiere."); });
+      } else {
+        const ta = document.createElement("textarea");
+        ta.value = tekst;
+        document.body.appendChild(ta);
+        ta.select();
+        try{
+          document.execCommand("copy");
+          alert("Tilbudsteksten er kopiert til utklippstavlen.");
+        } catch(err){
+          console.error("Feil:", err);
+          alert("Feil: Kunne ikke kopiere teksten.");
+        }
+        document.body.removeChild(ta);
+      }
+    }
+
+    // 7) SCROLL-TO-TOP
+    document.addEventListener("DOMContentLoaded", () => {
+      document.getElementById("orderDate").innerText = new Date().toLocaleDateString("no-NO");
+      // Legg til en kalkulator ved oppstart hvis ingen finnes
+      if(document.getElementById("calculators").children.length === 0){
+        addCalculator();
+      }
+      const scrollBtn = document.createElement("button");
+      scrollBtn.className = "scroll-to-top";
+      scrollBtn.innerHTML = "↑";
+      scrollBtn.title = "Til toppen";
+      document.body.appendChild(scrollBtn);
+      window.addEventListener("scroll", () => {
+        if(window.scrollY > 300){ scrollBtn.classList.add("show"); }
+        else { scrollBtn.classList.remove("show"); }
+      });
+      scrollBtn.addEventListener("click", () => {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      });
+    });
+
+    // 8) SNARVEIER (CTRL+ALT+T / F)
+    document.addEventListener("keydown", event => {
+      if(["INPUT","TEXTAREA"].includes(document.activeElement.tagName)) return;
+      if(event.ctrlKey && event.altKey){
+        switch(event.code){
+          case "KeyT":
+            event.preventDefault();
+            closeAllAdvancedAndAddCalculator();
+            break;
+          case "KeyF":
+            event.preventDefault();
+            if(calculatorCount > 0){ toggleAdvanced(calculatorCount); }
+            break;
+        }
+      }
+    });
+  </script>
+</body>
+</html>
